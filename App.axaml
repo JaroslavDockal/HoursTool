@@ -1,0 +1,129 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="HoursTool.App"
+             RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="CardBg" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="CardBorder" Color="#E1E3EC" />
+          <SolidColorBrush x:Key="PanelBg" Color="#F4F5FA" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="CardBg" Color="#26272E" />
+          <SolidColorBrush x:Key="CardBorder" Color="#3A3B45" />
+          <SolidColorBrush x:Key="PanelBg" Color="#1E1F25" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#6764f6" RegionColor="#FFFFFF" />
+        <ColorPaletteResources x:Key="Dark" Accent="#93a1ff" RegionColor="#17181D" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+    <Style Selector="Window">
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- panely a karty -->
+    <Style Selector="Border.bar">
+      <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+    </Style>
+    <Style Selector="Border.side">
+      <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+      <Setter Property="BorderThickness" Value="0,0,1,0" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource CardBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <!-- texty -->
+    <Style Selector="TextBlock.h">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,8,0,2" />
+    </Style>
+    <Style Selector="TextBlock.lbl">
+      <Setter Property="Opacity" Value="0.7" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- ovladaci prvky -->
+    <Style Selector="CheckBox">
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="Padding" Value="6,0,0,0" />
+    </Style>
+    <Style Selector="WrapPanel > CheckBox">
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="MinHeight" Value="30" />
+    </Style>
+    <Style Selector="Expander">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Expander CheckBox">
+      <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style Selector="Expander TextBlock">
+      <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style Selector="Expander ComboBox">
+      <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style Selector="Expander TextBox">
+      <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+
+
+    <!-- zalozky -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Padding" Value="14,8" />
+    </Style>
+
+    <!-- tabulky -->
+    <Style Selector="DataGrid">
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource CardBorder}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="DataGridCell">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="MinHeight" Value="26" />
+    </Style>
+    <Style Selector="DataGridCell.num TextBlock">
+      <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+  </Application.Styles>
+</Application>
