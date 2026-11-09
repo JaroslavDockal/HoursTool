@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8f8cff"/>
+      <stop offset="1" stop-color="#3f3bcf"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd76a"/>
+      <stop offset="1" stop-color="#ffb02e"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="58" fill="url(#bg)"/>
+  <!-- stopwatch crown and button -->
+  <rect x="113" y="30" width="30" height="16" rx="6" fill="#ffffff"/>
+  <rect x="122" y="42" width="12" height="16" fill="#ffffff"/>
+  <rect x="176" y="58" width="22" height="12" rx="5" fill="#ffffff" transform="rotate(45 187 64)"/>
+  <!-- dial -->
+  <circle cx="128" cy="142" r="80" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-width="15"/>
+  <!-- bars -->
+  <rect x="88" y="150" width="20" height="34" rx="6" fill="#ffffff"/>
+  <rect x="118" y="126" width="20" height="58" rx="6" fill="#ffffff"/>
+  <rect x="148" y="102" width="20" height="82" rx="6" fill="url(#gold)"/>
+</svg>

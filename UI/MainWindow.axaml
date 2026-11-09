@@ -1,0 +1,658 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sp="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+        xmlns:l="clr-namespace:HoursTool"
+        x:Class="HoursTool.MainWindow"
+        Icon="avares://HoursTool/Assets/icon.ico"
+        Title="Hours Tool" Width="1700" Height="980" MinWidth="1100" MinHeight="650"
+        DragDrop.AllowDrop="True">
+  <DockPanel>
+
+    <!-- ================= top bar ================= -->
+    <Border DockPanel.Dock="Top" Classes="bar" BorderThickness="0,0,0,1" Padding="12,7">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+          <ComboBox x:Name="CmbLang" Width="112" ToolTip.Tip="{l:T tip.lang}">
+            <ComboBoxItem Content="English" Tag="en" />
+            <ComboBoxItem Content="Čeština" Tag="cs" />
+          </ComboBox>
+          <ComboBox x:Name="CmbTheme" Width="128" ToolTip.Tip="{l:T tip.theme}">
+            <ComboBoxItem Content="{l:T theme.system}" />
+            <ComboBoxItem Content="{l:T theme.light}" />
+            <ComboBoxItem Content="{l:T theme.dark}" />
+          </ComboBox>
+          <Button x:Name="BtnHelp" Classes="icon" ToolTip.Tip="{l:T tip.help}">
+            <Path Classes="ico" Data="{StaticResource IcoHelp}" />
+          </Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button x:Name="BtnSidebar" Classes="icon" ToolTip.Tip="{l:T tip.sidebar}">
+            <Path Classes="ico" Data="{StaticResource IcoSidebar}" />
+          </Button>
+          <Image Source="avares://HoursTool/Assets/icon-64.png" Width="26" Height="26" Margin="4,0,0,0" />
+          <TextBlock Text="Hours Tool" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" Margin="2,0,14,0"
+                     Foreground="{DynamicResource AccentText}" />
+          <Button x:Name="BtnOpen" Classes="accent" ToolTip.Tip="{l:T tip.open}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Classes="ico" Data="{StaticResource IcoOpen}" />
+              <TextBlock Text="{l:T menu.open}" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="BtnReload" ToolTip.Tip="{l:T tip.reload}" Classes="icon">
+            <Path Classes="ico" Data="{StaticResource IcoReload}" />
+          </Button>
+          <Button x:Name="BtnClear" ToolTip.Tip="{l:T tip.clear}" Classes="icon">
+            <Path Classes="ico" Data="{StaticResource IcoTrash}" />
+          </Button>
+          <Border Classes="sep" />
+          <Button x:Name="BtnExport" ToolTip.Tip="{l:T tip.export}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Classes="ico" Data="{StaticResource IcoExport}" />
+              <TextBlock Text="{l:T menu.export}" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="BtnExportCharts" ToolTip.Tip="{l:T tip.exportCharts}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Classes="ico" Data="{StaticResource IcoChart}" />
+              <TextBlock Text="{l:T menu.exportCharts}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- ================= status bar ================= -->
+    <Border DockPanel.Dock="Bottom" Classes="bar" BorderThickness="0,1,0,0" Padding="14,5">
+      <DockPanel>
+        <TextBlock x:Name="TxtCounts" DockPanel.Dock="Right" FontSize="12" Classes="lbl" Margin="16,0,0,0" />
+        <TextBlock x:Name="TxtStatus" FontSize="12" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
+    </Border>
+
+    <!-- ================= side panel with filters ================= -->
+    <Border x:Name="SidePanel" DockPanel.Dock="Left" Classes="side" Width="330">
+      <ScrollViewer>
+        <StackPanel Margin="10" Spacing="6">
+
+          <Border Classes="card" Padding="12,10">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{l:T f.unit}" Classes="lbl" />
+              <ComboBox x:Name="CmbUnit" SelectedIndex="0" HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="{l:T f.unit.hours}" />
+                <ComboBoxItem x:Name="ItemUnitMoney" />
+              </ComboBox>
+              <CheckBox x:Name="ChkSplit" FontWeight="SemiBold" Margin="0,4,0,0" />
+              <TextBlock Classes="hint" Text="{l:T f.split.hint}" />
+            </StackPanel>
+          </Border>
+
+          <Expander IsExpanded="True">
+            <Expander.Header><TextBlock Text="{l:T f.period}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <WrapPanel>
+                <Button x:Name="BtnPresetAll" Classes="preset" Content="{l:T f.preset.all}" />
+                <Button x:Name="BtnPresetThisYear" Classes="preset" Content="{l:T f.preset.thisYear}" ToolTip.Tip="{l:T f.preset.thisYear.tip}" />
+                <Button x:Name="BtnPresetLastYear" Classes="preset" Content="{l:T f.preset.lastYear}" ToolTip.Tip="{l:T f.preset.lastYear.tip}" />
+                <Button x:Name="BtnPresetYtd" Classes="preset" Content="{l:T f.preset.ytd}" ToolTip.Tip="{l:T f.preset.ytd.tip}" />
+                <Button x:Name="BtnPreset12" Classes="preset" Content="{l:T f.preset.last12}" ToolTip.Tip="{l:T f.preset.last12.tip}" />
+              </WrapPanel>
+              <Grid ColumnDefinitions="*,8,*">
+                <StackPanel Grid.Column="0" Spacing="3">
+                  <TextBlock Text="{l:T f.from}" Classes="lbl" />
+                  <ComboBox x:Name="CmbFrom" HorizontalAlignment="Stretch" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3">
+                  <TextBlock Text="{l:T f.to}" Classes="lbl" />
+                  <ComboBox x:Name="CmbTo" HorizontalAlignment="Stretch" />
+                </StackPanel>
+              </Grid>
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <Button x:Name="BtnYearsAll" Classes="link" Content="{l:T f.all}" />
+                  <Button x:Name="BtnYearsNone" Classes="link" Content="{l:T f.none}" />
+                </StackPanel>
+                <TextBlock Text="{l:T f.years}" Classes="lbl" />
+              </DockPanel>
+              <WrapPanel x:Name="PnlYears" />
+              <DockPanel Margin="0,4,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <Button x:Name="BtnMonthsAll" Classes="link" Content="{l:T f.all}" />
+                  <Button x:Name="BtnMonthsNone" Classes="link" Content="{l:T f.none}" />
+                </StackPanel>
+                <TextBlock Text="{l:T f.months}" Classes="lbl" />
+              </DockPanel>
+              <WrapPanel x:Name="PnlMonths" />
+              <WrapPanel x:Name="PnlQuarters" />
+              <CheckBox x:Name="ChkCommon" Content="{l:T f.common}" ToolTip.Tip="{l:T f.common.tip}" />
+            </StackPanel>
+          </Expander>
+
+          <Expander IsExpanded="True">
+            <Expander.Header><TextBlock Text="{l:T f.org}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <Button x:Name="BtnCcAll" Classes="link" Content="{l:T f.all}" />
+                  <Button x:Name="BtnCcNone" Classes="link" Content="{l:T f.none}" />
+                </StackPanel>
+                <TextBlock Text="{l:T f.cc}" Classes="lbl" />
+              </DockPanel>
+              <WrapPanel x:Name="PnlCc" />
+              <DockPanel Margin="0,4,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <Button x:Name="BtnCustAll" Classes="link" Content="{l:T f.all}" />
+                  <Button x:Name="BtnCustNone" Classes="link" Content="{l:T f.none}" />
+                </StackPanel>
+                <TextBlock Text="{l:T f.customer}" Classes="lbl" />
+              </DockPanel>
+              <WrapPanel x:Name="PnlCust" />
+            </StackPanel>
+          </Expander>
+
+          <Expander IsExpanded="True">
+            <Expander.Header><TextBlock Text="{l:T f.type}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{l:T f.scope}" Classes="lbl" />
+              <ComboBox x:Name="CmbScope" SelectedIndex="0" HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="{l:T f.scope.all}" />
+                <ComboBoxItem Content="{l:T f.scope.inv}" />
+                <ComboBoxItem Content="{l:T f.scope.oh}" />
+              </ComboBox>
+              <TextBlock Text="{l:T f.cat}" Classes="lbl" Margin="0,4,0,0" />
+              <ComboBox x:Name="CmbCat" SelectedIndex="0" HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="{l:T f.cat.all}" />
+                <ComboBoxItem x:Name="ItemCatNb" />
+                <ComboBoxItem x:Name="ItemCatNoNb" />
+                <ComboBoxItem Content="{l:T f.cat.p}" />
+                <ComboBoxItem Content="{l:T f.cat.noP}" />
+                <ComboBoxItem Content="{l:T f.cat.regular}" />
+              </ComboBox>
+            </StackPanel>
+          </Expander>
+
+          <Expander>
+            <Expander.Header><TextBlock Text="{l:T f.project}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <TextBlock Classes="hint" Text="{l:T f.project.hint}" />
+              <TextBox x:Name="TxtProject" Watermark="{l:T f.project.wm}" />
+            </StackPanel>
+          </Expander>
+
+          <Expander>
+            <Expander.Header><TextBlock Text="{l:T f.people}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <TextBlock Classes="hint" Text="{l:T f.people.hint}" />
+              <TextBox x:Name="TxtPeople" Watermark="{l:T f.search}" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button x:Name="BtnAll" Classes="preset" Content="{l:T f.people.all}" />
+                <Button x:Name="BtnNone" Classes="preset" Content="{l:T f.people.none}" />
+              </StackPanel>
+              <ScrollViewer MaxHeight="340"><StackPanel x:Name="PnlPeople" /></ScrollViewer>
+            </StackPanel>
+          </Expander>
+
+          <Expander>
+            <Expander.Header><TextBlock Text="{l:T f.cols}" FontWeight="SemiBold" /></Expander.Header>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{l:T f.cols.monthly}" Classes="lbl" />
+              <StackPanel x:Name="PnlMonthly" />
+              <TextBlock Text="{l:T f.cols.summary}" Classes="lbl" Margin="0,6,0,0" />
+              <StackPanel x:Name="PnlSummary" />
+            </StackPanel>
+          </Expander>
+
+          <Button x:Name="BtnReset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,6,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Path Classes="ico" Data="{StaticResource IcoReset}" />
+              <TextBlock Text="{l:T f.reset}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- ================= content ================= -->
+    <Grid RowDefinitions="Auto,*">
+
+      <!-- active filter summary -->
+      <Border Grid.Row="0" x:Name="FilterBar" Padding="12,6,12,2">
+        <DockPanel>
+          <Path DockPanel.Dock="Left" Classes="ico" Data="{StaticResource IcoFilter}" Stroke="{DynamicResource SubtleFg}" Margin="0,0,8,0" />
+          <Button x:Name="BtnResetBar" DockPanel.Dock="Right" Classes="link" Content="{l:T f.reset}" VerticalAlignment="Center" />
+          <WrapPanel x:Name="PnlChips" VerticalAlignment="Center" />
+        </DockPanel>
+      </Border>
+
+      <TabControl x:Name="Tabs" Grid.Row="1" Margin="4,0,0,0">
+
+        <TabItem Header="{l:T tab.overview}" Tag="overview">
+          <ScrollViewer>
+            <StackPanel Margin="12" Spacing="4">
+              <WrapPanel x:Name="PnlKpi" />
+              <TextBlock Classes="h" Text="{l:T ov.stats}" />
+              <TextBlock Classes="hint" Text="{l:T ov.stats.hint}" />
+              <DataGrid x:Name="GridStats" IsReadOnly="True" CanUserSortColumns="False" Margin="0,4,0,0" MaxHeight="620" />
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.table}" Tag="table">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <WrapPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,0">
+                  <TextBlock Text="{l:T tb.rows}" Classes="lbl" />
+                  <ComboBox x:Name="CmbGroup" SelectedIndex="0" Width="150">
+                    <ComboBoxItem Content="{l:T g.person}" />
+                    <ComboBoxItem Content="{l:T g.cc}" />
+                    <ComboBoxItem Content="{l:T g.customer}" />
+                    <ComboBoxItem Content="{l:T g.project}" />
+                    <ComboBoxItem Content="{l:T g.year}" />
+                    <ComboBoxItem Content="{l:T g.profile}" />
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,0">
+                  <TextBlock Text="{l:T tb.cols}" Classes="lbl" />
+                  <ComboBox x:Name="CmbCols" SelectedIndex="0" Width="150">
+                    <ComboBoxItem Content="{l:T tb.cols.months}" />
+                    <ComboBoxItem Content="{l:T tb.cols.quarters}" />
+                    <ComboBoxItem Content="{l:T tb.cols.years}" />
+                    <ComboBoxItem Content="{l:T tb.cols.none}" />
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,0">
+                  <TextBlock Text="{l:T tb.sort}" Classes="lbl" />
+                  <ComboBox x:Name="CmbSort" SelectedIndex="0" Width="180">
+                    <ComboBoxItem Content="{l:T tb.sort.alpha}" />
+                    <ComboBoxItem Content="{l:T tb.sort.inv}" />
+                    <ComboBoxItem Content="{l:T tb.sort.total}" />
+                    <ComboBoxItem Content="{l:T tb.sort.pct}" />
+                    <ComboBoxItem Content="{l:T tb.sort.pctAsc}" />
+                  </ComboBox>
+                </StackPanel>
+                <TextBox x:Name="TxtTableFind" Width="190" Watermark="{l:T tb.find}" Margin="0,0,10,0" />
+                <Button x:Name="BtnCopyTable" ToolTip.Tip="{l:T tip.copy}">
+                  <StackPanel Orientation="Horizontal" Spacing="7">
+                    <Path Classes="ico" Data="{StaticResource IcoCopy}" />
+                    <TextBlock Text="{l:T tb.copy}" />
+                  </StackPanel>
+                </Button>
+              </WrapPanel>
+            </Border>
+            <TextBlock DockPanel.Dock="Bottom" Classes="hint" Margin="10,0,10,6" Text="{l:T tb.hint}" />
+            <DataGrid x:Name="GridTable" Margin="8,4,8,4" IsReadOnly="True" CanUserSortColumns="False"
+                      CanUserResizeColumns="True" FrozenColumnCount="2" />
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.time}" Tag="time">
+          <sp:AvaPlot x:Name="PlotTime" Margin="8" />
+        </TabItem>
+
+        <TabItem Header="{l:T tab.trend}" Tag="trend">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <WrapPanel>
+                <TextBlock Text="{l:T tr.metric}" Classes="lbl" Margin="0,0,8,0" />
+                <ComboBox x:Name="CmbTrend" Width="270" Margin="0,0,16,0" />
+                <CheckBox x:Name="ChkMa" Content="{l:T tr.ma}" IsChecked="True" Margin="0,0,16,0" />
+                <CheckBox x:Name="ChkTrend" Content="{l:T tr.lin}" IsChecked="True" Margin="0,0,16,0" />
+                <CheckBox x:Name="ChkSkipLast" Content="{l:T tr.skipLast}" ToolTip.Tip="{l:T tr.skipLast.tip}" Margin="0,0,16,0" />
+                <TextBlock Text="{l:T tr.fc}" Classes="lbl" Margin="0,0,8,0" />
+                <ComboBox x:Name="CmbFc" SelectedIndex="2" Width="150">
+                  <ComboBoxItem Content="{l:T tr.fc.none}" />
+                  <ComboBoxItem Content="{l:T tr.fc.1}" />
+                  <ComboBoxItem Content="{l:T tr.fc.3}" />
+                  <ComboBoxItem Content="{l:T tr.fc.6}" />
+                </ComboBox>
+              </WrapPanel>
+            </Border>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,4" Padding="12,8">
+              <SelectableTextBlock x:Name="TxtTrend" TextWrapping="Wrap" FontSize="12" />
+            </Border>
+            <sp:AvaPlot x:Name="PlotTrend" Margin="8" />
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.yoy}" Tag="yoy">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                  <TextBlock Text="{l:T tr.metric}" Classes="lbl" />
+                  <ComboBox x:Name="CmbYoy" Width="270" />
+                </StackPanel>
+                <SelectableTextBlock x:Name="TxtYoy" Margin="16,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+              </DockPanel>
+            </Border>
+            <Grid RowDefinitions="*,*">
+              <sp:AvaPlot x:Name="PlotYoy" Grid.Row="0" Margin="8,4,8,2" />
+              <sp:AvaPlot x:Name="PlotCum" Grid.Row="1" Margin="8,2,8,8" />
+            </Grid>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.cust}" Tag="cust">
+          <Grid RowDefinitions="*,*" ColumnDefinitions="*,*" Margin="4">
+            <sp:AvaPlot x:Name="PlotCust" Grid.Row="0" Grid.Column="0" Margin="4" />
+            <Border Grid.Row="0" Grid.Column="1" Classes="card" Margin="4" Padding="8">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Classes="h" Text="{l:T cu.share}" Margin="4,2,0,4" />
+                <sp:AvaPlot x:Name="PlotPie" />
+              </DockPanel>
+            </Border>
+            <sp:AvaPlot x:Name="PlotCustTime" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.people}" Tag="people">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="{l:T pe.top}" Classes="lbl" />
+                <ComboBox x:Name="CmbRankN" SelectedIndex="1" Width="90">
+                  <ComboBoxItem Content="20" />
+                  <ComboBoxItem Content="40" />
+                  <ComboBoxItem Content="80" />
+                  <ComboBoxItem Content="{l:T pe.allPeople}" />
+                </ComboBox>
+                <TextBlock Text="{l:T pe.by}" Classes="lbl" Margin="8,0,0,0" />
+                <ComboBox x:Name="CmbRankBy" SelectedIndex="0" Width="180">
+                  <ComboBoxItem Content="{l:T pe.by.inv}" />
+                  <ComboBoxItem Content="{l:T pe.by.total}" />
+                  <ComboBoxItem Content="{l:T pe.by.oh}" />
+                  <ComboBoxItem Content="{l:T pe.by.pct}" />
+                </ComboBox>
+              </StackPanel>
+            </Border>
+            <sp:AvaPlot x:Name="PlotRank" Margin="8" />
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.heat}" Tag="heat">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="{l:T he.value}" Classes="lbl" />
+                <ComboBox x:Name="CmbHeat" SelectedIndex="0" Width="230" />
+                <TextBlock Text="{l:T he.rows}" Classes="lbl" Margin="8,0,0,0" />
+                <ComboBox x:Name="CmbHeatRows" SelectedIndex="0" Width="160">
+                  <ComboBoxItem Content="{l:T g.person}" />
+                  <ComboBoxItem Content="{l:T g.customer}" />
+                  <ComboBoxItem Content="{l:T g.cc}" />
+                  <ComboBoxItem Content="{l:T g.project}" />
+                </ComboBox>
+              </StackPanel>
+            </Border>
+            <sp:AvaPlot x:Name="PlotHeat" Margin="8" />
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.person}" Tag="person">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                  <TextBlock Text="{l:T g.person}" Classes="lbl" />
+                  <Button x:Name="BtnPrevPerson" Classes="icon"><Path Classes="ico" Data="{StaticResource IcoPrev}" /></Button>
+                  <ComboBox x:Name="CmbPerson" Width="290" />
+                  <Button x:Name="BtnNextPerson" Classes="icon"><Path Classes="ico" Data="{StaticResource IcoNext}" /></Button>
+                </StackPanel>
+                <WrapPanel x:Name="PnlPersonKpi" Margin="14,0,0,0" VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+            <Grid ColumnDefinitions="3*,Auto,2*">
+              <sp:AvaPlot x:Name="PlotPerson" Grid.Column="0" Margin="8" />
+              <GridSplitter Grid.Column="1" Width="5" Background="Transparent" />
+              <DataGrid x:Name="GridPersonProj" Grid.Column="2" Margin="0,8,8,8" IsReadOnly="True"
+                        AutoGenerateColumns="False" CanUserSortColumns="True" CanUserResizeColumns="True" />
+            </Grid>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.projects}" Tag="projects">
+          <DockPanel>
+            <Border DockPanel.Dock="Top" Classes="card" Margin="8,8,8,4" Padding="12,8">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBox x:Name="TxtProjFind" Width="260" Watermark="{l:T tb.find}" />
+                <TextBlock x:Name="TxtProjCount" Classes="lbl" />
+              </StackPanel>
+            </Border>
+            <DataGrid x:Name="GridProj" Margin="8,4,8,8" IsReadOnly="True" AutoGenerateColumns="False"
+                      CanUserSortColumns="True" CanUserResizeColumns="True" />
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.data}" Tag="data">
+          <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="8">
+            <DockPanel Grid.Row="0" Margin="2,0,0,4">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <Button x:Name="BtnRemoveFile" Content="{l:T da.remove}" />
+                <Button x:Name="BtnReloadFiles" Content="{l:T da.reload}" />
+              </StackPanel>
+              <TextBlock Classes="h" Text="{l:T da.files}" Margin="0" VerticalAlignment="Center" />
+            </DockPanel>
+            <DataGrid x:Name="GridFiles" Grid.Row="1" IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="230"
+                      CanUserResizeColumns="True" SelectionMode="Extended" />
+            <DockPanel Grid.Row="2" Margin="2,12,0,4">
+              <ComboBox x:Name="CmbIssueLevel" DockPanel.Dock="Right" SelectedIndex="0" Width="200">
+                <ComboBoxItem Content="{l:T da.lvl.all}" />
+                <ComboBoxItem Content="{l:T da.lvl.warn}" />
+                <ComboBoxItem Content="{l:T da.lvl.lists}" />
+              </ComboBox>
+              <TextBlock Classes="h" Text="{l:T da.issues}" Margin="0" VerticalAlignment="Center" />
+            </DockPanel>
+            <DataGrid x:Name="GridIssues" Grid.Row="3" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                      CanUserResizeColumns="True" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.settings}" Tag="settings">
+          <DockPanel>
+            <!-- sticky action bar -->
+            <Border DockPanel.Dock="Bottom" Classes="bar" BorderThickness="0,1,0,0" Padding="14,8">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                  <Button x:Name="BtnApply" Classes="accent" Content="{l:T set.apply}" />
+                  <Button x:Name="BtnRevert" Content="{l:T set.revert}" />
+                </StackPanel>
+                <TextBlock x:Name="TxtSetErrors" Classes="err" Margin="14,0,0,0" VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+            <ScrollViewer>
+              <Grid Margin="10" ColumnDefinitions="11*,9*" MaxWidth="1500" HorizontalAlignment="Left">
+
+                <!-- left column -->
+                <StackPanel Grid.Column="0" Spacing="12" Margin="4">
+
+                  <!-- profiles -->
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.profiles}" Margin="0" />
+                      <TextBlock Classes="hint" Text="{l:T set.profiles.hint}" />
+                      <DockPanel Margin="0,4,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" Margin="6,0,0,0">
+                          <Button x:Name="BtnProfAdd" Classes="icon" ToolTip.Tip="{l:T set.prof.add}"><Path Classes="ico" Data="{StaticResource IcoPlus}" /></Button>
+                          <Button x:Name="BtnProfDup" Classes="icon" ToolTip.Tip="{l:T set.prof.dup}"><Path Classes="ico" Data="{StaticResource IcoCopy}" /></Button>
+                          <Button x:Name="BtnProfUp" Classes="icon" ToolTip.Tip="{l:T set.prof.up}"><Path Classes="ico" Data="{StaticResource IcoUp}" /></Button>
+                          <Button x:Name="BtnProfDown" Classes="icon" ToolTip.Tip="{l:T set.prof.down}"><Path Classes="ico" Data="{StaticResource IcoDown}" /></Button>
+                          <Button x:Name="BtnProfDel" Classes="icon" ToolTip.Tip="{l:T set.prof.del}"><Path Classes="ico" Data="{StaticResource IcoTrash}" /></Button>
+                        </StackPanel>
+                        <ComboBox x:Name="CmbProfile" HorizontalAlignment="Stretch" />
+                      </DockPanel>
+                      <Grid ColumnDefinitions="2*,12,*,12,*" Margin="0,6,0,0">
+                        <StackPanel Grid.Column="0" Spacing="3">
+                          <TextBlock Text="{l:T prof.name}" Classes="lbl" />
+                          <TextBox x:Name="TxtProfName" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="3">
+                          <TextBlock Text="{l:T prof.from}" Classes="lbl" />
+                          <TextBox x:Name="TxtProfFrom" Watermark="{l:T prof.wm.from}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Spacing="3">
+                          <TextBlock Text="{l:T prof.to}" Classes="lbl" />
+                          <TextBox x:Name="TxtProfTo" Watermark="{l:T prof.wm.to}" />
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock x:Name="TxtProfCoverage" Classes="hint" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.ccPeople}" Margin="0" />
+                      <TextBlock Text="{l:T set.cc}" Classes="lbl" />
+                      <TextBox x:Name="TxtSetCc" />
+                      <TextBlock Classes="hint" Text="{l:T set.cc.hint}" />
+                      <TextBlock Text="{l:T set.restricted}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetRestricted" />
+                      <TextBlock Text="{l:T set.people}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBlock Classes="hint" Text="{l:T set.people.hint}" />
+                      <TextBox x:Name="TxtSetPeople" AcceptsReturn="True" Height="160" />
+                      <Button x:Name="BtnFillPeople" Content="{l:T set.fillPeople}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.class}" Margin="0" />
+                      <TextBlock Text="{l:T set.ohId}" Classes="lbl" />
+                      <TextBox x:Name="TxtSetOh" AcceptsReturn="True" Height="66" />
+                      <TextBlock Text="{l:T set.ohDesc}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetOhDesc" AcceptsReturn="True" Height="52" />
+                      <TextBlock Text="{l:T set.nbRegex}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetNb" />
+                      <TextBlock Text="{l:T set.nbEx}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetNbEx" AcceptsReturn="True" Height="66" />
+                      <TextBlock Text="{l:T set.prRegex}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetPr" />
+                      <TextBlock Classes="hint" Text="{l:T set.regex.hint}" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.custDetect}" Margin="0" />
+                      <TextBlock Classes="hint" Text="{l:T set.custDetect.hint}" />
+                      <Grid ColumnDefinitions="Auto,12,*" Margin="0,4,0,0">
+                        <StackPanel Grid.Column="0" Spacing="3">
+                          <TextBlock Text="{l:T set.abacusLen}" Classes="lbl" />
+                          <NumericUpDown x:Name="NumAbacus" Minimum="0" Maximum="10" Increment="1" FormatString="0" Width="130" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="3">
+                          <TextBlock Text="{l:T set.idCust}" Classes="lbl" />
+                          <TextBox x:Name="TxtSetIdCust" />
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock Text="{l:T set.descCodes}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBox x:Name="TxtSetDescCodes" />
+                      <TextBlock Text="{l:T set.overrides}" Classes="lbl" Margin="0,6,0,0" />
+                      <TextBlock Classes="hint" Text="{l:T set.overrides.hint}" />
+                      <TextBox x:Name="TxtSetOverrides" AcceptsReturn="True" Height="80" Watermark="^FKMMPXX12 => FI" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+
+                <!-- right column -->
+                <StackPanel Grid.Column="1" Spacing="12" Margin="4">
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.tester}" Margin="0" />
+                      <TextBlock Classes="hint" Text="{l:T set.tester.hint}" />
+                      <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+                        <TextBox x:Name="TstId" Grid.Row="0" Grid.Column="0" Watermark="SAP Project ID" Margin="0,0,0,6" />
+                        <TextBox x:Name="TstDesc" Grid.Row="0" Grid.Column="2" Watermark="{l:T col.desc}" Margin="0,0,0,6" />
+                        <TextBox x:Name="TstAbacus" Grid.Row="1" Grid.Column="0" Watermark="ABACUS" Margin="0,0,0,6" />
+                        <TextBox x:Name="TstPeriod" Grid.Row="1" Grid.Column="2" Watermark="{l:T set.tester.period}" Margin="0,0,0,6" />
+                        <TextBox x:Name="TstCc" Grid.Row="2" Grid.Column="0" Watermark="{l:T col.cc}" />
+                        <TextBox x:Name="TstPerson" Grid.Row="2" Grid.Column="2" Watermark="{l:T col.person}" />
+                      </Grid>
+                      <Border Classes="chip" HorizontalAlignment="Stretch" CornerRadius="8" Padding="10,8" Margin="0,4,0,0">
+                        <SelectableTextBlock x:Name="TxtTest" TextWrapping="Wrap" FontSize="12" />
+                      </Border>
+                      <TextBlock Classes="hint" Text="{l:T set.tester.note}" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.general}" Margin="0" />
+                      <TextBlock Text="{l:T set.customers}" Classes="lbl" />
+                      <TextBox x:Name="TxtSetCust" />
+                      <Grid ColumnDefinitions="*,12,*" Margin="0,4,0,0">
+                        <StackPanel Grid.Column="0" Spacing="3">
+                          <TextBlock Text="{l:T set.split}" Classes="lbl" />
+                          <TextBox x:Name="TxtSetSplit" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="3">
+                          <TextBlock Text="{l:T set.valueUnit}" Classes="lbl" />
+                          <TextBox x:Name="TxtSetUnit" />
+                        </StackPanel>
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.columns}" Margin="0" />
+                      <TextBlock Classes="hint" Text="{l:T set.columns.hint}" />
+                      <Grid x:Name="GridColumns" ColumnDefinitions="150,*" Margin="0,4,0,0" />
+                      <Button x:Name="BtnColumnsDefault" Content="{l:T set.columns.reset}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="card" Padding="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T set.file}" Margin="0" />
+                      <SelectableTextBlock x:Name="TxtCfgPath" Classes="mono" TextWrapping="Wrap" />
+                      <WrapPanel>
+                        <Button x:Name="BtnCfgExport" Content="{l:T set.cfgExport}" Margin="0,0,6,6" />
+                        <Button x:Name="BtnCfgImport" Content="{l:T set.cfgImport}" Margin="0,0,6,6" />
+                        <Button x:Name="BtnCfgDefaults" Content="{l:T set.cfgDefaults}" Margin="0,0,6,6" />
+                      </WrapPanel>
+                      <TextBlock Classes="hint" Text="{l:T set.file.hint}" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </ScrollViewer>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="{l:T tab.help}" Tag="help">
+          <Grid ColumnDefinitions="240,*">
+            <Border Grid.Column="0" Classes="side" Padding="6">
+              <ListBox x:Name="LstHelpToc" Background="Transparent" />
+            </Border>
+            <ScrollViewer x:Name="HelpScroll" Grid.Column="1">
+              <StackPanel x:Name="PnlHelp" Margin="28,18" MaxWidth="900" HorizontalAlignment="Left" Spacing="6" />
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+      </TabControl>
+
+      <!-- welcome / empty state (shown when no data is loaded) -->
+      <Border x:Name="Welcome" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource PanelBg}" IsVisible="False">
+        <Border Classes="card" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="40,32" MaxWidth="620">
+          <StackPanel Spacing="12" HorizontalAlignment="Center">
+            <Image Source="avares://HoursTool/Assets/icon-256.png" Width="96" Height="96" />
+            <TextBlock Text="{l:T wel.title}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:T wel.text}" TextWrapping="Wrap" TextAlignment="Center" Classes="lbl" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,8,0,0">
+              <Button x:Name="BtnWelcomeOpen" Classes="accent" Padding="18,9">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <Path Classes="ico" Data="{StaticResource IcoOpen}" />
+                  <TextBlock Text="{l:T menu.open}" />
+                </StackPanel>
+              </Button>
+              <Button x:Name="BtnWelcomeHelp" Content="{l:T wel.help}" Padding="18,9" />
+              <Button x:Name="BtnWelcomeSettings" Content="{l:T wel.settings}" Padding="18,9" />
+            </StackPanel>
+            <TextBlock Text="{l:T wel.drop}" Classes="hint" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Border>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

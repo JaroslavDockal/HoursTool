@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="HoursTool.App"
+             Name="Hours Tool"
              RequestedThemeVariant="Default">
   <Application.Resources>
     <ResourceDictionary>
@@ -9,13 +10,48 @@
           <SolidColorBrush x:Key="CardBg" Color="#FFFFFF" />
           <SolidColorBrush x:Key="CardBorder" Color="#E1E3EC" />
           <SolidColorBrush x:Key="PanelBg" Color="#F4F5FA" />
+          <SolidColorBrush x:Key="ChipBg" Color="#ECEBFF" />
+          <SolidColorBrush x:Key="SubtleFg" Color="#5B5E6B" />
+          <SolidColorBrush x:Key="TotalRowBg" Color="#F0F0FA" />
+          <SolidColorBrush x:Key="WarnFg" Color="#B26A00" />
+          <SolidColorBrush x:Key="ErrFg" Color="#D0202A" />
+          <SolidColorBrush x:Key="OkFg" Color="#1F8A5E" />
+          <SolidColorBrush x:Key="AccentText" Color="#4F4BE0" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="CardBg" Color="#26272E" />
           <SolidColorBrush x:Key="CardBorder" Color="#3A3B45" />
           <SolidColorBrush x:Key="PanelBg" Color="#1E1F25" />
+          <SolidColorBrush x:Key="ChipBg" Color="#33335A" />
+          <SolidColorBrush x:Key="SubtleFg" Color="#A9ACB8" />
+          <SolidColorBrush x:Key="TotalRowBg" Color="#2E2E40" />
+          <SolidColorBrush x:Key="WarnFg" Color="#F2B33D" />
+          <SolidColorBrush x:Key="ErrFg" Color="#FF6B6B" />
+          <SolidColorBrush x:Key="OkFg" Color="#4CC995" />
+          <SolidColorBrush x:Key="AccentText" Color="#A9B3FF" />
+          <!-- dark text on the light accent colour for readable accent buttons -->
+          <SolidColorBrush x:Key="AccentButtonForeground" Color="#14152B" />
+          <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#14152B" />
+          <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#14152B" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <!-- stroke icons, 24x24 grid -->
+      <StreamGeometry x:Key="IcoOpen">M3,6.5 L9,6.5 L11,8.5 L21,8.5 L21,19 L3,19 Z</StreamGeometry>
+      <StreamGeometry x:Key="IcoExport">M12,4 L12,15 M7.5,10.5 L12,15 L16.5,10.5 M4,19.5 L20,19.5</StreamGeometry>
+      <StreamGeometry x:Key="IcoChart">M4,20 L20,20 M7,17 L7,11 M12,17 L12,6 M17,17 L17,13</StreamGeometry>
+      <StreamGeometry x:Key="IcoCopy">M8.5,8.5 L19,8.5 L19,20 L8.5,20 Z M5,15.5 L5,4 L15.5,4</StreamGeometry>
+      <StreamGeometry x:Key="IcoHelp">M12,3 A9,9 0 1 1 11.99,3 Z M9.5,9.5 C9.5,6.8 14.5,6.8 14.5,9.5 C14.5,11.6 12,11.6 12,14.2 M12,17 L12,17.6</StreamGeometry>
+      <StreamGeometry x:Key="IcoSidebar">M3.5,5 L20.5,5 L20.5,19 L3.5,19 Z M9,5 L9,19</StreamGeometry>
+      <StreamGeometry x:Key="IcoTrash">M5,7 L19,7 M10,7 L10,4.5 L14,4.5 L14,7 M7,7 L8,20 L16,20 L17,7</StreamGeometry>
+      <StreamGeometry x:Key="IcoReset">M5,12 A7,7 0 1 0 7.2,6.9 M4.5,3.5 L4.5,8.5 L9.5,8.5</StreamGeometry>
+      <StreamGeometry x:Key="IcoReload">M19,12 A7,7 0 1 1 16.8,6.9 M19.5,3.5 L19.5,8.5 L14.5,8.5</StreamGeometry>
+      <StreamGeometry x:Key="IcoPrev">M15,5 L8,12 L15,19</StreamGeometry>
+      <StreamGeometry x:Key="IcoNext">M9,5 L16,12 L9,19</StreamGeometry>
+      <StreamGeometry x:Key="IcoPlus">M12,5 L12,19 M5,12 L19,12</StreamGeometry>
+      <StreamGeometry x:Key="IcoUp">M6,15 L12,9 L18,15</StreamGeometry>
+      <StreamGeometry x:Key="IcoDown">M6,9 L12,15 L18,9</StreamGeometry>
+      <StreamGeometry x:Key="IcoFilter">M4,5 L20,5 L14,12.5 L14,19 L10,17 L10,12.5 Z</StreamGeometry>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -32,7 +68,25 @@
       <Setter Property="FontSize" Value="13" />
     </Style>
 
-    <!-- panely a karty -->
+    <!-- icons inside buttons: stroke uses the button foreground -->
+    <Style Selector="Path.ico">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="Stroke" Value="{DynamicResource ButtonForeground}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.accent Path.ico">
+      <Setter Property="Stroke" Value="{DynamicResource AccentButtonForeground}" />
+    </Style>
+    <Style Selector="Button:disabled Path.ico">
+      <Setter Property="Stroke" Value="{DynamicResource ButtonForegroundDisabled}" />
+    </Style>
+
+    <!-- panels and cards -->
     <Style Selector="Border.bar">
       <Setter Property="Background" Value="{DynamicResource PanelBg}" />
       <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
@@ -48,24 +102,47 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="10" />
     </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="9,3" />
+      <Setter Property="Margin" Value="0,2,6,2" />
+    </Style>
+    <Style Selector="Border.chip TextBlock">
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Border.sep">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource CardBorder}" />
+      <Setter Property="Margin" Value="4,4" />
+    </Style>
 
-    <!-- texty -->
+    <!-- texts -->
     <Style Selector="TextBlock.h">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Margin" Value="0,8,0,2" />
     </Style>
     <Style Selector="TextBlock.lbl">
-      <Setter Property="Opacity" Value="0.7" />
+      <Setter Property="Foreground" Value="{DynamicResource SubtleFg}" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.hint">
-      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Foreground" Value="{DynamicResource SubtleFg}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <Style Selector="TextBlock.err">
+      <Setter Property="Foreground" Value="{DynamicResource ErrFg}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="SelectableTextBlock.mono">
+      <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,Menlo,monospace" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
 
-    <!-- ovladaci prvky -->
+    <!-- controls -->
     <Style Selector="CheckBox">
       <Setter Property="MinHeight" Value="24" />
       <Setter Property="Padding" Value="6,0,0,0" />
@@ -78,12 +155,28 @@
       <Setter Property="Padding" Value="12,6" />
       <Setter Property="CornerRadius" Value="6" />
     </Style>
+    <Style Selector="Button.icon">
+      <Setter Property="Padding" Value="7" />
+    </Style>
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="5,1" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+    </Style>
+    <Style Selector="Button.preset">
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="0,0,4,4" />
+    </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="30" />
     </Style>
     <Style Selector="Expander">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Padding" Value="10,6" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Expander CheckBox">
@@ -98,21 +191,28 @@
     <Style Selector="Expander TextBox">
       <Setter Property="FontWeight" Value="Normal" />
     </Style>
-
-
-    <!-- zalozky -->
-    <Style Selector="TabItem">
-      <Setter Property="FontSize" Value="14" />
-      <Setter Property="Padding" Value="14,8" />
+    <Style Selector="Expander Button">
+      <Setter Property="FontWeight" Value="Normal" />
     </Style>
 
-    <!-- tabulky -->
+    <!-- tabs -->
+    <Style Selector="TabControl">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="MinHeight" Value="38" />
+    </Style>
+
+    <!-- grids -->
     <Style Selector="DataGrid">
       <Setter Property="GridLinesVisibility" Value="Horizontal" />
       <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource CardBorder}" />
       <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{DynamicResource CardBg}" />
     </Style>
     <Style Selector="DataGridColumnHeader">
       <Setter Property="FontSize" Value="12" />
@@ -124,6 +224,16 @@
     </Style>
     <Style Selector="DataGridCell.num TextBlock">
       <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="DataGridRow.total">
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Background" Value="{DynamicResource TotalRowBg}" />
+    </Style>
+    <Style Selector="DataGridRow.warn DataGridCell">
+      <Setter Property="Foreground" Value="{DynamicResource WarnFg}" />
+    </Style>
+    <Style Selector="DataGridRow.error DataGridCell">
+      <Setter Property="Foreground" Value="{DynamicResource ErrFg}" />
     </Style>
   </Application.Styles>
 </Application>
