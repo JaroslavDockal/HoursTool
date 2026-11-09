@@ -41,6 +41,17 @@ Windows single-file executable (same as `build.bat`):
 dotnet publish HoursTool.csproj -c Release -r win-x64 -o publish
 ```
 
+Framework-dependent variant (same as `build-fd.bat`) – smaller exe (~35 MB instead of ~47 MB),
+but the target PC needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (x64):
+
+```bash
+dotnet publish HoursTool.csproj -c Release -r win-x64 -p:SelfContained=false -o publish-fd
+```
+
+Most of the size are the bundled libraries (Avalonia, SkiaSharp native rendering, ScottPlot,
+ClosedXML/OpenXML), not .NET itself; the self-contained build is compressed, the framework-dependent
+one cannot be.
+
 Other platforms: replace `win-x64` with `linux-x64` or `osx-arm64`.
 
 Tests (core logic: loader, periods, classification, profiles, config migration, translations):

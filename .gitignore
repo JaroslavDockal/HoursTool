@@ -5,3 +5,4 @@ publish/
 .vs/
 tests/**/bin/
 tests/**/obj/
+publish-fd/

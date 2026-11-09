@@ -17,10 +17,13 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- single-file exe (build.bat). Override for other platforms: dotnet publish -r linux-x64 -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
+    <!-- self-contained by default; framework-dependent build: -p:SelfContained=false (see build.bat) -->
+    <SelfContained Condition="'$(SelfContained)' == ''">true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
+    <!-- native libraries (SkiaSharp, HarfBuzz) are not part of .NET, so they are always bundled -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- compression is only supported for self-contained single-file bundles -->
+    <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>none</DebugType>
   </PropertyGroup>
