@@ -39,6 +39,8 @@ public partial class MainWindow : Window
     List<Row> _rows = new();
     /// <summary>Rows after side-panel filters – the input of every view.</summary>
     List<Row> _lastRows = new();
+    /// <summary>Raw rows that are not counted, with the reason (see <see cref="Classifier.ExcludeReason"/>).</summary>
+    readonly List<(Raw raw, string reason)> _excluded = new();
     /// <summary>Latest cost centre of each person (for labels and sorting).</summary>
     Dictionary<string, string> _personCc = new();
 
@@ -384,7 +386,15 @@ public partial class MainWindow : Window
     {
         _cls = new Classifier(_cfg);
         _metrics = _cls.Metrics();
-        _rows = _raw.Where(_cls.IsIncluded).Select(_cls.Classify).ToList();
+        var rows = new List<Row>(_raw.Count);
+        _excluded.Clear();
+        foreach (var r in _raw)
+        {
+            var (row, reason) = _cls.Process(r);      // advanced scripts run once per row
+            if (row != null) rows.Add(row);
+            else _excluded.Add((r, reason!));
+        }
+        _rows = rows;
         _personCc = _rows.OrderBy(r => r.Period).GroupBy(r => r.Person).ToDictionary(g => g.Key, g => g.Last().Cc);
 
         _busy = true;

@@ -38,7 +38,7 @@ Panel skryjete/zobrazíte tlačítkem vlevo nahoře nebo **Ctrl+B**. Aktivní fi
 | Jen společné měsíce | Ponechá jen měsíce, které mají všechny vybrané roky – férové srovnání rozpracovaného roku. |
 | Cost centra, Zákazníci | `(overhead)` = overhead hodiny, `??` = zákazník se nepodařilo určit. |
 | Typ hodin | Vše / jen invoiced / jen overhead. |
-| Kategorie projektu | Jen newbuild, bez newbuild, jen P projekty, bez P, jen běžné invoiced. |
+| Kategorie projektu | Jen newbuild, bez newbuild, jen P projekty, bez P, jen běžné invoiced. Pod tím zaškrtávací seznam všech kategorií včetně vlastních z pokročilých pravidel. |
 | Projekt | Text v ID nebo popisu. Více výrazů oddělte `;`, výraz s `-` na začátku vyloučí (např. `COM; -DD`). |
 | Lidé | Dočasné skrytí konkrétních lidí (pamatuje se mezi spuštěními). |
 | Sloupce tabulky | Které metriky se zobrazí v tabulce za období a v souhrnu Σ. |
@@ -46,7 +46,7 @@ Panel skryjete/zobrazíte tlačítkem vlevo nahoře nebo **Ctrl+B**. Aktivní fi
 ## 3. Záložky
 
 - **Přehled** – karty s hlavními ukazateli. Šipka ▲/▼ ukazuje meziroční změnu posledních dvou roků **na stejných měsících** (zelená = dobrý směr). Pod kartami jsou statistiky po letech se sloupci Δ.
-- **Tabulka** – kontingenční tabulka. Řádky: osoba, cost centrum, zákazník, projekt, rok nebo profil pravidel. Sloupce: měsíce, čtvrtletí, roky nebo jen souhrn. Řazení, hledání řádku a **Kopírovat** (vloží se do Excelu). Dvojklik na osobu otevře její detail.
+- **Tabulka** – kontingenční tabulka. Řádky: osoba, cost centrum, zákazník, projekt, rok, profil pravidel nebo kategorie. Sloupce: měsíce, čtvrtletí, roky nebo jen souhrn. Řazení, hledání řádku a **Kopírovat** (vloží se do Excelu). Dvojklik na osobu otevře její detail.
 - **Průběh v čase** – skládaný graf po měsících: invoiced podle zákazníků + overhead.
 - **Trendy** – vybraná metrika v čase s klouzavým průměrem, lineárním trendem a prognózou. *Ignorovat poslední měsíc* vyřadí rozpracovaný měsíc. R² blízko 1 znamená spolehlivý trend.
 - **Meziročně** – roky přes sebe (leden–prosinec) a kumulativní průběh od ledna.
@@ -99,6 +99,46 @@ Když se pravidla mezi roky liší (jiné CC, nové kódy overheadu, jiné sché
 Pod rozsahem vidíte, kolik načtených období profil klasifikuje. Záložka **Tabulka** s řádky podle *Profilu pravidel* a sloupec *Profil* na záložce Projekty ukazují, který profil se kde použil.
 
 Formát rozsahu: `2024` (= celý rok), `2024/07` (od/do července 2024), prázdné = neomezeno.
+
+### Pokročilý režim – skript pravidel
+
+Když jednoduchý formulář nestačí (jiné schéma ID projektů, výjimky, vlastní kategorie…), přepněte v profilu **Pravidla: Pokročilá (skript pravidel)**. Formulář se nahradí editorem, ve kterém pravidla zapíšete jako krátký kód. Při prvním přepnutí se skript **vygeneruje z jednoduchého nastavení** – klasifikuje přesně stejně, takže začínáte z funkčního základu. Jednoduché nastavení zůstává uložené a kdykoli se k němu můžete vrátit. Každý profil (rok) může mít jiný režim.
+
+```
+# komentář
+list tym = Novák Jan; Svoboda Petr
+
+rule Overhead – interní projekty
+  when StartsWith(Id, "INTR") or Match(Desc, "školení|porada")
+  set Overhead = true
+  stop
+
+rule Zákazník z ABACUS
+  when Customer = "??" and Abacus.Trim().Length >= 2
+  set Customer = Left(Abacus.Trim(), 2)
+
+rule Servis
+  when Category = "" and Contains(Desc, "_SERVICE")
+  set Category = "Service"
+```
+
+**Jak se vyhodnocuje:** každý řádek začíná ve stavu Include = true, Overhead = false, Customer = "??", Category = "". Pravidla se procházejí shora dolů; pokud platí podmínka `when`, provedou se řádky `set` (postupně, každý vidí výsledek předchozího) a `stop` ukončí vyhodnocení řádku. Nakonec overhead řádky dostanou zákazníka `-`.
+
+| Příkaz | Význam |
+|---|---|
+| `rule <název>` | začátek pravidla |
+| `when <podmínka>` | podmínka (bez ní platí vždy); pokračovat lze na odsazených řádcích |
+| `set <pole> = <výraz>` | Include, Overhead, Customer nebo Category |
+| `stop` | další pravidla už se pro řádek nevyhodnocují |
+| `list <název> = a; b` | pojmenovaný seznam, v výrazech jako `@název` |
+
+- **Proměnné:** Id, Desc, Abacus, Cc, Person, Period (RRRR/MM), Year, Month, Hours, Value a aktuální Customer, Category, Overhead, Include.
+- **Funkce:** `Match(text, regex)`, `Group(text, regex, n)`, `In(hodnota, seznam)`, `Token(text, kódy)`, `Contains`, `StartsWith`, `EndsWith`, `Left`, `Right`, `Upper`, `IsEmpty`. Porovnávání textu nerozlišuje velikost písmen. Fungují i běžné metody (`Id.Length`, `Id.Substring(5, 2)`).
+- **Operátory:** `and`, `or`, `not` (nebo `&&`, `||`, `!`); v podmínce `=` znamená porovnání; `podmínka ? A : B`; texty spojíte `+`.
+- **Texty** v uvozovkách jsou doslovné – `"\d{2}"` je rovnou regex; uvozovku uvnitř zapíšete jako `""`.
+- **Kategorie:** `NB` a `P` napájejí metriky newbuild / P projekty; libovolný jiný text je vlastní kategorie – objeví se ve filtru *Kategorie*, v tabulce (řádky podle kategorie), heatmapě, projektech a exportu.
+
+Pomůcky v editoru: **Příklady…** (okno s více než 20 hotovými pravidly, vložení jedním klikem), **Reference** pod editorem, průběžná kontrola chyb s číslem řádku a **tester pravidel** vpravo (ukáže, která pravidla zabrala). Na záložce **Kontrola dat** uvidíte, kolik řádků které pravidlo zachytilo, která pravidla nikdy nezabrala a chyby při vyhodnocení.
 
 ### Tester pravidel
 

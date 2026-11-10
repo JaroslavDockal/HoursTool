@@ -26,6 +26,8 @@ public class Classifier
         public HashSet<string> NbEx = null!, Cc = null!, Restricted = null!, People = null!, DescCodes = null!;
         public Regex DescCust = null!;
         public List<(Regex rx, string code)> Overrides = new();
+        /// <summary>Compiled rule script when the profile is in advanced mode, otherwise null.</summary>
+        public RuleScript? Script;
     }
 
     static readonly Regex Never = new("(?!)");
@@ -71,6 +73,7 @@ public class Classifier
             var parts = o.Split("=>", 2);
             if (parts.Length == 2 && parts[1].Trim() != "") c.Overrides.Add((Rx(parts[0]), parts[1].Trim().ToUpperInvariant()));
         }
+        if (p.Advanced) c.Script = RuleScript.Compile(p.Script);
         return c;
     }
 
@@ -85,27 +88,56 @@ public class Classifier
     public RuleProfile ProfileOf(string period) => For(period).P;
 
     /// <summary>
-    /// True when the row passes the cost-centre and relevant-people rules of its profile.
-    /// An empty cost-centre list in the profile means "all cost centres".
+    /// Why a row is not counted: <c>null</c> = included, <c>"cc"</c> = cost centre not configured,
+    /// <c>"people"</c> = not a relevant person in a manual-selection cost centre, <c>"rule:NAME"</c> = excluded
+    /// by an advanced rule. An empty cost-centre list in a simple profile means "all cost centres".
     /// </summary>
-    public bool IsIncluded(Raw r)
+    public string? ExcludeReason(Raw r)
     {
         var c = For(r.Period);
-        if (c.Cc.Count > 0 && !c.Cc.Contains(r.Cc)) return false;
-        return !c.Restricted.Contains(r.Cc) || c.People.Contains(r.Person.Trim());
+        if (c.Script != null)
+        {
+            var res = c.Script.Run(r);
+            return res.Include ? null : "rule:" + (res.ExcludedBy ?? "?");
+        }
+        if (c.Cc.Count > 0 && !c.Cc.Contains(r.Cc)) return "cc";
+        if (c.Restricted.Contains(r.Cc) && !c.People.Contains(r.Person.Trim())) return "people";
+        return null;
     }
 
-    /// <summary>True when the row's cost centre is configured in its profile (ignores the people rule).</summary>
-    public bool InCostCenters(Raw r)
+    /// <summary>True when the row is counted (see <see cref="ExcludeReason"/>).</summary>
+    public bool IsIncluded(Raw r) => ExcludeReason(r) == null;
+
+    /// <summary>
+    /// Classifies a row and applies the inclusion rules in one pass (the script runs only once).
+    /// Returns the classified row, or <c>null</c> plus the exclusion reason.
+    /// </summary>
+    public (Row? row, string? reason) Process(Raw r)
     {
         var c = For(r.Period);
-        return c.Cc.Count == 0 || c.Cc.Contains(r.Cc);
+        if (c.Script != null)
+        {
+            var res = c.Script.Run(r);
+            if (!res.Include) return (null, "rule:" + (res.ExcludedBy ?? "?"));
+            return (FromScript(r, res, c.P.Name), null);
+        }
+        var reason = ExcludeReason(r);
+        return reason == null ? (Classify(r), null) : (null, reason);
     }
 
-    /// <summary>True when the row's cost centre is one with manual people selection.</summary>
-    public bool InRestricted(Raw r) => For(r.Period).Restricted.Contains(r.Cc);
+    static Row FromScript(Raw r, ScriptResult res, string profile)
+    {
+        var cat = res.Overhead ? "" : res.Category;
+        return new Row(r.Period, r.Year, r.Month, r.Person, r.Cc, r.SapId, r.Desc, res.Customer, res.Overhead,
+                       cat.Equals("NB", StringComparison.OrdinalIgnoreCase), cat.Equals("P", StringComparison.OrdinalIgnoreCase),
+                       r.Hours, r.Value, profile, r.Abacus, cat);
+    }
 
-    /// <summary>True when the project is overhead according to the profile of <paramref name="period"/>.</summary>
+    /// <summary>All compiled rule scripts (advanced profiles), for rule statistics on the Data tab.</summary>
+    public IEnumerable<(RuleProfile profile, RuleScript script)> Scripts =>
+        _compiled.Values.Where(c => c.Script != null).Select(c => (c.P, c.Script!));
+
+    /// <summary>True when the project is overhead according to the simple rules of <paramref name="period"/>.</summary>
     public bool IsOverhead(string period, string sapId, string desc)
     {
         var c = For(period);
@@ -113,7 +145,7 @@ public class Classifier
     }
 
     /// <summary>
-    /// Detects the customer code. Order: manual override → ABACUS prefix → <c>_XX_</c> token in the description →
+    /// Detects the customer (simple mode). Order: manual override → ABACUS prefix → <c>_XX_</c> token in the description →
     /// capture group of the ID regex → <c>??</c>.
     /// </summary>
     /// <returns>Customer code and a short description of the rule that decided it.</returns>
@@ -134,18 +166,19 @@ public class Classifier
     }
 
     /// <summary>
-    /// Classifies a raw row: overhead → per-request (P) → newbuild (only for the split customer, unless the
-    /// description is excluded). Overhead rows get customer <c>"-"</c>.
+    /// Classifies a raw row (ignores inclusion). Advanced profiles run their script; simple profiles apply:
+    /// overhead → per-request (P) → newbuild (unless the description is excluded). Overhead rows get customer <c>"-"</c>.
     /// </summary>
     public Row Classify(Raw r)
     {
         var c = For(r.Period);
+        if (c.Script != null) return FromScript(r, c.Script.Run(r), c.P.Name);
         bool oh = IsOverhead(r.Period, r.SapId, r.Desc);
         string cust = oh ? "-" : CustomerOf(r).code;
         bool pr = !oh && c.Pr.IsMatch(r.SapId);
         bool nb = !oh && !pr && c.Nb.IsMatch(r.SapId) && !c.NbEx.Contains(r.Desc.Trim());
         return new Row(r.Period, r.Year, r.Month, r.Person, r.Cc, r.SapId, r.Desc,
-                       cust, oh, nb, pr, r.Hours, r.Value, c.P.Name);
+                       cust, oh, nb, pr, r.Hours, r.Value, c.P.Name, r.Abacus, pr ? "P" : nb ? "NB" : "");
     }
 
     /// <summary>
@@ -156,6 +189,19 @@ public class Classifier
         var c = For(r.Period);
         var sb = new List<string> { L.T("test.profile", c.P.Name, c.P.RangeText) };
         if (!_cfg.HasProfileFor(r.Period)) sb.Add(L.T("test.fallback"));
+        if (c.Script != null)
+        {
+            var res = c.Script.Run(r);
+            sb.Add(L.T("test.fired", res.Fired.Count == 0 ? "–" : string.Join(" → ", res.Fired)));
+            if (!res.Include) sb.Add(L.T("test.excludedBy", res.ExcludedBy));
+            else if (res.Overhead) sb.Add(L.T("test.overhead"));
+            else
+            {
+                sb.Add(L.T("test.customerAdv", res.Customer));
+                sb.Add(res.Category == "" ? L.T("test.noCategory") : L.T("test.category", res.Category));
+            }
+            return string.Join("\n", sb);
+        }
         if (c.Cc.Count > 0 && !c.Cc.Contains(r.Cc)) sb.Add(L.T("test.ccOut", r.Cc));
         else if (c.Restricted.Contains(r.Cc) && !c.People.Contains(r.Person.Trim())) sb.Add(L.T("test.personOut", r.Person, r.Cc));
         var row = Classify(r);

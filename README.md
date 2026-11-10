@@ -16,6 +16,9 @@ Windows (single-file exe), and also on Linux/macOS.
   aliases, period as one column (many formats) or separate Year + Month, decimal comma/dot.
 - **Rule profiles** valid for period ranges, so each year can have its own cost centres, people
   lists, overhead/newbuild/P-project rules and customer detection.
+- **Advanced mode** per profile: classification written as a rule script (`rule / when / set / stop`,
+  C#-syntax expressions, helper functions, named lists, own project categories); generated from the
+  simple settings as a starting point, examples window, live error checking, per-rule statistics.
 - Live **rule tester** and validation in Settings; settings import/export (JSON).
 - Filters: presets (latest/previous year, YTD vs. previous, last 12 months), From/To range,
   years, months, quarters, cost centres, customers, hour type, project category, project text,
@@ -70,6 +73,8 @@ Core/                        UI-independent logic (also compiled into the tests)
   Loader.cs                  tolerant reader for xlsx/xls/csv exports + LoadReport diagnostics
   Periods.cs                 period parsing (YYYY/MM keys), range bounds, Stats (regression, moving avg.)
   Classifier.cs              applies profile rules per period, customer detection, measures (Metric)
+  RuleScript.cs              advanced mode: rule-script parser/compiler (DynamicExpresso), evaluator, generator
+  ScriptExamples.cs          ready-made rule snippets for the examples window
   Analytics.cs               measure evaluation, formatting, YoY on common months, project aggregation
   Loc.cs, Strings.cs         localisation service and the EN/CS translation table
 UI/
@@ -83,6 +88,7 @@ UI/
   MainWindow.Help.cs         built-in user guide
   Charts.cs                  ScottPlot helpers (styling, chart types)
   MarkdownView.cs            minimal Markdown renderer for the guide
+  ExamplesWindow.cs          examples window of the rule-script editor
   LocExtension.cs            {l:T key} XAML markup extension
 Assets/                      application icon (svg source, ico, png)
 docs/                        user guides (embedded into the app)
@@ -101,6 +107,11 @@ files ──Loader──▶ Raw rows ──Classifier (profile per period)──
 - **Period keys** are always `YYYY/MM`, so ordinal string comparison sorts chronologically.
 - **Profiles** are evaluated top to bottom; the first whose range covers the period wins, otherwise
   the first profile without a range (fallback). Compiled regexes are cached per profile and period.
+- **Advanced profiles** compile their script once per classifier; each condition/assignment becomes a
+  compiled delegate whose parameters are the script variables. The language layer (`RuleScript.Translate`)
+  adds raw string literals, `@list` references, `and/or/not` and `=` as comparison on top of C# syntax.
+  Runtime errors (e.g. `Substring` out of range) count per rule and make the condition false.
+  Rows carry a free-text `Category` (`NB` and `P` drive the newbuild / P measures).
 - **Measures** (`Metric`) have stable ids (`inv`, `oh`, `cust:FI`, `cust:other`, `split:nb`,
   `split:p`, `split:rest`) plus derived indicators (`total`, `pct`, `perp`, `heads`) in `Analytics`.
 - **Lazy views:** a filter change marks all tabs dirty and rebuilds only the visible one; other tabs

@@ -38,7 +38,7 @@ Hide/show the panel with the button at the top left or **Ctrl+B**. Active filter
 | Only common months | Keeps only months present in all selected years – fair comparison with an incomplete year. |
 | Cost centres, Customers | `(overhead)` = overhead hours, `??` = customer could not be determined. |
 | Type of hours | All / invoiced only / overhead only. |
-| Project category | Only newbuild, without newbuild, only P projects, without P, only regular invoiced. |
+| Project category | Only newbuild, without newbuild, only P projects, without P, only regular invoiced. Below it a check list of all categories incl. own ones from advanced rules. |
 | Project | Text in ID or description. Separate several terms with `;`, a leading `-` excludes (e.g. `COM; -DD`). |
 | People | Temporarily hide specific people (remembered between sessions). |
 | Table columns | Which measures the table shows per period and in the Σ totals. |
@@ -46,7 +46,7 @@ Hide/show the panel with the button at the top left or **Ctrl+B**. Active filter
 ## 3. Tabs
 
 - **Overview** – cards with the key indicators. ▲/▼ shows the change between the last two years **on the same months** (green = good direction). Below: statistics by year with Δ columns.
-- **Table** – pivot table. Rows: person, cost centre, customer, project, year or rule profile. Columns: months, quarters, years or totals only. Sorting, row search and **Copy** (paste into Excel). Double-click a person to open their detail.
+- **Table** – pivot table. Rows: person, cost centre, customer, project, year, rule profile or category. Columns: months, quarters, years or totals only. Sorting, row search and **Copy** (paste into Excel). Double-click a person to open their detail.
 - **Over time** – stacked monthly chart: invoiced by customer + overhead.
 - **Trends** – a measure over time with moving average, linear trend and forecast. *Ignore last month* drops an incomplete month. R² close to 1 means a reliable trend.
 - **Year over year** – years on top of each other (Jan–Dec) and the cumulative curve from January.
@@ -99,6 +99,46 @@ When the rules differ between years (other cost centres, new overhead codes, a n
 Below the range you can see how many loaded periods the profile classifies. The **Table** tab with rows by *Rule profile* and the *Profile* column on the Projects tab show where each profile was used.
 
 Range format: `2024` (whole year), `2024/07` (from/to July 2024), empty = open.
+
+### Advanced mode – rule script
+
+When the simple form is not enough (a different project-ID scheme, exceptions, own categories…), switch the profile to **Rules: Advanced (rule script)**. The form is replaced by an editor where the rules are written as short code. On the first switch the script is **generated from the simple settings** – it classifies exactly the same, so you start from a working base. The simple settings are kept and you can switch back any time. Each profile (year) can use a different mode.
+
+```
+# comment
+list team = Novák Jan; Svoboda Petr
+
+rule Overhead – internal projects
+  when StartsWith(Id, "INTR") or Match(Desc, "training|meeting")
+  set Overhead = true
+  stop
+
+rule Customer from ABACUS
+  when Customer = "??" and Abacus.Trim().Length >= 2
+  set Customer = Left(Abacus.Trim(), 2)
+
+rule Service
+  when Category = "" and Contains(Desc, "_SERVICE")
+  set Category = "Service"
+```
+
+**Evaluation:** every row starts with Include = true, Overhead = false, Customer = "??", Category = "". Rules run top to bottom; when the `when` condition holds, its `set` lines are applied (in order, each sees the previous one) and `stop` ends the evaluation of the row. Finally overhead rows get customer `-`.
+
+| Statement | Meaning |
+|---|---|
+| `rule <name>` | starts a rule |
+| `when <condition>` | condition (without it the rule always applies); may continue on indented lines |
+| `set <field> = <expr>` | Include, Overhead, Customer or Category |
+| `stop` | no further rules for this row |
+| `list <name> = a; b` | named list, used in expressions as `@name` |
+
+- **Variables:** Id, Desc, Abacus, Cc, Person, Period (YYYY/MM), Year, Month, Hours, Value and the current Customer, Category, Overhead, Include.
+- **Functions:** `Match(text, regex)`, `Group(text, regex, n)`, `In(value, list)`, `Token(text, codes)`, `Contains`, `StartsWith`, `EndsWith`, `Left`, `Right`, `Upper`, `IsEmpty`. Text comparisons ignore case. Standard members work too (`Id.Length`, `Id.Substring(5, 2)`).
+- **Operators:** `and`, `or`, `not` (or `&&`, `||`, `!`); in a condition `=` means comparison; `condition ? A : B`; join texts with `+`.
+- **Strings** in quotes are raw – `"\d{2}"` is a regex as is; write a quote inside as `""`.
+- **Categories:** `NB` and `P` feed the newbuild / P-project measures; any other text is an own category – it appears in the *Categories* filter, the table (rows by category), heatmap, projects and export.
+
+Editor helpers: **Examples…** (a window with 20+ ready-made rules, inserted with one click), the **Reference** below the editor, live error checking with line numbers and the **rule tester** on the right (shows which rules fired). The **Data check** tab shows how many rows each rule matched, rules that never matched and evaluation errors.
 
 ### Rule tester
 

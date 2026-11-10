@@ -28,6 +28,7 @@ public partial class MainWindow
         _edit = _cfg.Clone();
         _profIdx = 0;
         BuildColumnEditor();
+        BuildScriptReference();
         FillSettings();
     }
 
@@ -72,6 +73,12 @@ public partial class MainWindow
         };
         BtnProfUp.Click += (_, _) => MoveProfile(-1);
         BtnProfDown.Click += (_, _) => MoveProfile(+1);
+
+        RbAdvanced.IsCheckedChanged += (_, _) => OnModeChanged();
+        BtnScriptGenerate.Click += async (_, _) => await GenerateScript();
+        BtnScriptExamples.Click += (_, _) => new ExamplesWindow(InsertSnippet).Show(this);
+        BtnScriptCheck.Click += (_, _) => SettingsChanged();
+        TxtScript.TextChanged += (_, _) => { if (!_settingsLoading) { _settingsTimer.Stop(); _settingsTimer.Start(); } };
 
         foreach (var tb in new[] { TxtProfName, TxtProfFrom, TxtProfTo, TxtSetCc, TxtSetRestricted, TxtSetPeople, TxtSetOh, TxtSetOhDesc,
                                    TxtSetNb, TxtSetNbEx, TxtSetPr, TxtSetIdCust, TxtSetDescCodes, TxtSetOverrides,
@@ -135,6 +142,7 @@ public partial class MainWindow
     {
         SyncSettings();
         BuildColumnEditor();
+        BuildScriptReference();
         FillSettings();
     }
 
@@ -165,6 +173,10 @@ public partial class MainWindow
         TxtSetIdCust.Text = pr.IdCustomerRegex;
         TxtSetDescCodes.Text = string.Join(", ", pr.DescCustomerCodes);
         TxtSetOverrides.Text = string.Join("\n", pr.CustomerOverrides);
+        RbAdvanced.IsChecked = pr.Advanced;
+        RbSimple.IsChecked = !pr.Advanced;
+        TxtScript.Text = pr.Script;
+        UpdateModePanels();
 
         TxtSetCust.Text = string.Join(", ", _edit.Customers);
         TxtSetSplit.Text = _edit.SplitCustomer;
@@ -196,6 +208,8 @@ public partial class MainWindow
         pr.IdCustomerRegex = (TxtSetIdCust.Text ?? "").Trim();
         pr.DescCustomerCodes = Split(TxtSetDescCodes.Text, ',', ';', ' ').Select(x => x.ToUpperInvariant()).Distinct().ToList();
         pr.CustomerOverrides = Lines(TxtSetOverrides.Text);
+        pr.Advanced = RbAdvanced.IsChecked == true;
+        pr.Script = (TxtScript.Text ?? "").Replace("\r\n", "\n");
 
         _edit.Customers = Split(TxtSetCust.Text, ',', ';').Select(x => x.ToUpperInvariant()).Distinct().ToList();
         _edit.SplitCustomer = (TxtSetSplit.Text ?? "").Trim().ToUpperInvariant();
@@ -240,7 +254,129 @@ public partial class MainWindow
             TxtProfCoverage.Text = (mine.Count == 0 ? L.T("prof.cov.none") : L.T("prof.cov", mine.Count, mine[0], mine[^1]))
                 + (none.Count > 0 && _edit.Profiles.Any(p => !p.IsOpen) ? "  " + L.T("prof.cov.fallback", none.Count) : "");
         }
+        UpdateScriptInfo();
         UpdateTester(errs.Count == 0);
+    }
+
+    // ---------- advanced mode ----------
+
+    void UpdateModePanels()
+    {
+        bool adv = RbAdvanced.IsChecked == true;
+        PnlAdvanced.IsVisible = adv;
+        PnlSimple.IsVisible = !adv;
+    }
+
+    /// <summary>Switching to advanced mode with an empty script generates rules equivalent to the simple settings.</summary>
+    void OnModeChanged()
+    {
+        if (_settingsLoading) return;
+        SyncSettings();
+        var pr = _edit.Profiles[_profIdx];
+        if (pr.Advanced && string.IsNullOrWhiteSpace(pr.Script))
+        {
+            pr.Script = RuleScript.FromSimple(pr);
+            _settingsLoading = true; TxtScript.Text = pr.Script; _settingsLoading = false;
+        }
+        UpdateModePanels();
+        SettingsChanged();
+    }
+
+    /// <summary>Replaces the script with rules generated from the simple settings (asks first when a script exists).</summary>
+    async Task GenerateScript()
+    {
+        SyncSettings();
+        var pr = _edit.Profiles[_profIdx];
+        if (!string.IsNullOrWhiteSpace(pr.Script) && !await Confirm(L.T("adv.generate.confirm"))) return;
+        pr.Script = RuleScript.FromSimple(pr);
+        _settingsLoading = true; TxtScript.Text = pr.Script; _settingsLoading = false;
+        SettingsChanged();
+    }
+
+    /// <summary>Inserts a snippet (from the examples window) at the caret position of the script editor.</summary>
+    void InsertSnippet(string snippet)
+    {
+        var text = TxtScript.Text ?? "";
+        int pos = Math.Clamp(TxtScript.CaretIndex, 0, text.Length);
+        // insert at the start of the current line, separated by blank lines
+        int lineStart = text.LastIndexOf('\n', Math.Max(0, pos - 1)) + 1;
+        if (pos == 0) lineStart = 0;
+        var ins = (lineStart > 0 && !text[..lineStart].EndsWith("\n\n") ? "\n" : "") + snippet.TrimEnd() + "\n\n";
+        TxtScript.Text = text.Insert(lineStart, ins);
+        TxtScript.CaretIndex = lineStart + ins.Length;
+        if (RbAdvanced.IsChecked != true) RbAdvanced.IsChecked = true;
+        TxtScript.Focus();
+        Status(L.T("st.snippetInserted"));
+    }
+
+    /// <summary>Shows the number of rules/lists and the compile errors of the current script.</summary>
+    void UpdateScriptInfo()
+    {
+        if (RbAdvanced.IsChecked != true) { TxtScriptErrors.Text = ""; TxtScriptInfo.Text = ""; return; }
+        var sc = RuleScript.Compile(TxtScript.Text);
+        TxtScriptInfo.Text = L.T("adv.info", sc.Rules.Count, sc.Lists.Count);
+        TxtScriptErrors.Text = string.Join("\n", sc.Errors.Select(e => "⚠ " + e));
+    }
+
+    /// <summary>Fills the variable/function reference of the script editor.</summary>
+    void BuildScriptReference()
+    {
+        PnlScriptRef.Children.Clear();
+        void Head(string t) => PnlScriptRef.Children.Add(new TextBlock { Text = t, FontWeight = Avalonia.Media.FontWeight.SemiBold, Margin = new Avalonia.Thickness(0, 6, 0, 2) });
+        void Item(string code, string text)
+        {
+            var g = new Grid { ColumnDefinitions = new ColumnDefinitions("230,*") };
+            var c = new SelectableTextBlock { Text = code, FontFamily = new Avalonia.Media.FontFamily("Cascadia Mono,Consolas,Menlo,monospace"), FontSize = 12 };
+            var d = new TextBlock { Text = text, FontSize = 12, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Classes = { "lbl" } };
+            Grid.SetColumn(d, 1);
+            g.Children.Add(c); g.Children.Add(d);
+            PnlScriptRef.Children.Add(g);
+        }
+        Head(L.T("adv.ref.syntax"));
+        Item("# …  // …", L.T("adv.ref.comment"));
+        Item("list name = a; b; c", L.T("adv.ref.list"));
+        Item("rule <name>", L.T("adv.ref.rule"));
+        Item("  when <condition>", L.T("adv.ref.when"));
+        Item("  set <field> = <expr>", L.T("adv.ref.set"));
+        Item("  stop", L.T("adv.ref.stop"));
+        Item("@name", L.T("adv.ref.at"));
+        Item("and  or  not  =  !=", L.T("adv.ref.ops"));
+        Item("\"text\"", L.T("adv.ref.string"));
+        Item("a ? b : c", L.T("adv.ref.ternary"));
+        Head(L.T("adv.ref.fields"));
+        Item("Include", L.T("adv.var.include"));
+        Item("Overhead", L.T("adv.var.overhead"));
+        Item("Customer", L.T("adv.var.customer"));
+        Item("Category", L.T("adv.var.category"));
+        Head(L.T("adv.ref.vars"));
+        foreach (var (n, k) in RuleScript.Variables.Where(v => v.name is not ("Include" or "Overhead" or "Customer" or "Category")))
+            Item(n, L.T(k));
+        Head(L.T("adv.ref.fns"));
+        foreach (var (_, sig, k) in RuleScript.Functions) Item(sig, L.T(k));
+        Item("Id.Length, Desc.Substring(0, 3), …", L.T("adv.fn.methods"));
+    }
+
+    /// <summary>Simple yes/no dialog.</summary>
+    async Task<bool> Confirm(string text)
+    {
+        var dlg = new Window
+        {
+            Title = "Hours Tool", Width = 460, SizeToContent = SizeToContent.Height, CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Icon = Icon
+        };
+        bool result = false;
+        var yes = new Button { Content = L.T("dlg.yes"), Classes = { "accent" } };
+        var no = new Button { Content = L.T("dlg.no") };
+        yes.Click += (_, _) => { result = true; dlg.Close(); };
+        no.Click += (_, _) => dlg.Close();
+        var buttons = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+        buttons.Children.Add(yes); buttons.Children.Add(no);
+        var sp = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
+        sp.Children.Add(new TextBlock { Text = text, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+        sp.Children.Add(buttons);
+        dlg.Content = sp;
+        await dlg.ShowDialog(this);
+        return result;
     }
 
     /// <summary>The applied config with the same runtime fields as the working copy (for change detection).</summary>

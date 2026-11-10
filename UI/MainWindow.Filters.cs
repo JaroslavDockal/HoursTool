@@ -99,6 +99,9 @@ public partial class MainWindow
         _busy = prev;
     }
 
+    /// <summary>Display text of a project category (empty category = "(no category)").</summary>
+    static string CatText(string c) => c == "" ? L.T("cat.none") : c;
+
     /// <summary>Id stored in the Tag of the selected <see cref="ComboBoxItem"/>.</summary>
     static string? SelectedId(ComboBox cb) => (cb.SelectedItem as ComboBoxItem)?.Tag as string;
 
@@ -110,6 +113,10 @@ public partial class MainWindow
         FillChecks(PnlCust, _rows.Select(r => r.Customer).Distinct()
                                  .OrderBy(x => x == "-" ? 2 : x == "??" ? 1 : 0).ThenBy(x => x, StringComparer.Ordinal)
                                  .Select(c => (c, c == "-" ? L.T("f.cust.oh") : c == "??" ? L.T("f.cust.unknown") : c)));
+
+        FillChecks(PnlCatList, _rows.Select(r => r.Category).Distinct()
+                                    .OrderBy(x => x == "" ? 1 : 0).ThenBy(x => x, StringComparer.OrdinalIgnoreCase)
+                                    .Select(c => (c, CatText(c))));
 
         // period range: keep an explicit selection, otherwise follow the data bounds
         var periods = _rows.Select(r => r.Period).Distinct().OrderBy(x => x).ToList();
@@ -142,6 +149,8 @@ public partial class MainWindow
         BtnMonthsNone.Click += (_, _) => SetAll(PnlMonths, false);
         BtnCcAll.Click += (_, _) => SetAll(PnlCc, true);
         BtnCcNone.Click += (_, _) => SetAll(PnlCc, false);
+        BtnCatAll.Click += (_, _) => SetAll(PnlCatList, true);
+        BtnCatNone.Click += (_, _) => SetAll(PnlCatList, false);
         BtnCustAll.Click += (_, _) => SetAll(PnlCust, true);
         BtnCustNone.Click += (_, _) => SetAll(PnlCust, false);
         BtnAll.Click += (_, _) => SetVisiblePeople(true);
@@ -246,7 +255,7 @@ public partial class MainWindow
     void ResetFilters()
     {
         _busy = true;
-        foreach (var pnl in new Panel[] { PnlYears, PnlMonths, PnlCc, PnlCust })
+        foreach (var pnl in new Panel[] { PnlYears, PnlMonths, PnlCc, PnlCust, PnlCatList })
             SetChecks(pnl, _ => true);
         CmbScope.SelectedIndex = 0; CmbCat.SelectedIndex = 0;
         TxtProject.Text = ""; ChkCommon.IsChecked = false;
@@ -321,6 +330,7 @@ public partial class MainWindow
         var months = CheckedTags(PnlMonths).Select(int.Parse).ToHashSet();
         var ccs = CheckedTags(PnlCc);
         var custs = CheckedTags(PnlCust);
+        var cats = CheckedTags(PnlCatList);
         int scope = CmbScope.SelectedIndex, cat = CmbCat.SelectedIndex;
         var (inc, exc) = ProjectTerms(TxtProject.Text);
         var deselected = _cfg.DeselectedPeople.ToHashSet();
@@ -347,7 +357,7 @@ public partial class MainWindow
         };
 
         var rows = _rows.Where(r =>
-            years.Contains(r.Year) && months.Contains(r.Month) && ccs.Contains(r.Cc) && custs.Contains(r.Customer) &&
+            years.Contains(r.Year) && months.Contains(r.Month) && ccs.Contains(r.Cc) && custs.Contains(r.Customer) && cats.Contains(r.Category) &&
             (from == null || string.CompareOrdinal(r.Period, from) >= 0) &&
             (to == null || string.CompareOrdinal(r.Period, to) <= 0) &&
             !deselected.Contains(r.Person) &&
@@ -398,6 +408,7 @@ public partial class MainWindow
         if (ChkCommon.IsChecked == true) Chip(L.T("f.common"), () => ChkCommon.IsChecked = false);
         if (!AllChecked(PnlCc)) Chip(L.T("chip.cc", List(PnlCc)), () => SetAll(PnlCc, true));
         if (!AllChecked(PnlCust)) Chip(L.T("chip.cust", List(PnlCust)), () => SetAll(PnlCust, true));
+        if (!AllChecked(PnlCatList)) Chip(L.T("chip.cat", List(PnlCatList)), () => SetAll(PnlCatList, true));
         if (CmbScope.SelectedIndex > 0) Chip((CmbScope.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "", () => CmbScope.SelectedIndex = 0);
         if (CmbCat.SelectedIndex > 0) Chip((CmbCat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "", () => CmbCat.SelectedIndex = 0);
         if (!string.IsNullOrWhiteSpace(TxtProject.Text)) Chip(L.T("chip.project", TxtProject.Text), () => TxtProject.Text = "");

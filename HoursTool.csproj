@@ -42,5 +42,6 @@
     <PackageReference Include="ScottPlot.Avalonia" Version="5.0.47" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="ClosedXML" Version="0.104.1" />
+    <PackageReference Include="DynamicExpresso.Core" Version="2.16.1" />
   </ItemGroup>
 </Project>

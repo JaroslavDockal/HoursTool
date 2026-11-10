@@ -136,7 +136,7 @@ public class Analytics
                 var f = g.First();
                 return new ProjRow(g.Key.SapId, g.Key.Desc, f.Customer,
                     f.Overhead ? L.T("type.overhead") : L.T("type.invoiced"),
-                    f.Newbuild ? L.T("cat.nb") : f.PerRequest ? L.T("cat.p") : "",
+                    f.Category,
                     Math.Round(g.Sum(V), 1), g.Select(r => r.Person).Distinct().Count(),
                     g.Min(r => r.Period)!, g.Max(r => r.Period)!,
                     string.Join(", ", g.Select(r => r.Profile).Distinct()));

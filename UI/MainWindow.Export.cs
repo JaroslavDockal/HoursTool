@@ -112,7 +112,7 @@ public partial class MainWindow
             // 5) filtered, classified rows – ready for own pivot tables
             var ws5 = wb.AddWorksheet(L.T("x.data"));
             string[] dh = { L.T("x.period"), L.T("g.year"), L.T("x.month"), L.T("col.person"), "CC", "SAP ID", L.T("col.desc"),
-                            L.T("pr.customer"), L.T("pr.type"), L.T("cat.nb"), L.T("cat.p"), L.T("col.hours"), L.T("col.value"), L.T("pr.profile") };
+                            L.T("pr.customer"), L.T("pr.type"), L.T("pr.cat"), "ABACUS", L.T("col.hours"), L.T("col.value"), L.T("pr.profile") };
             for (int i = 0; i < dh.Length; i++) ws5.Cell(1, i + 1).Value = dh[i];
             int rr = 2;
             foreach (var r in _lastRows.OrderBy(r => r.Period).ThenBy(r => r.Person))
@@ -121,7 +121,7 @@ public partial class MainWindow
                 ws5.Cell(rr, 4).Value = r.Person; ws5.Cell(rr, 5).Value = r.Cc; ws5.Cell(rr, 6).Value = r.SapId;
                 ws5.Cell(rr, 7).Value = r.Desc; ws5.Cell(rr, 8).Value = r.Customer;
                 ws5.Cell(rr, 9).Value = r.Overhead ? L.T("type.overhead") : L.T("type.invoiced");
-                ws5.Cell(rr, 10).Value = r.Newbuild ? 1 : 0; ws5.Cell(rr, 11).Value = r.PerRequest ? 1 : 0;
+                ws5.Cell(rr, 10).Value = r.Category; ws5.Cell(rr, 11).Value = r.Abacus;
                 ws5.Cell(rr, 12).Value = r.Hours; ws5.Cell(rr, 13).Value = r.Value; ws5.Cell(rr, 14).Value = r.Profile;
                 rr++;
             }
@@ -153,6 +153,7 @@ public partial class MainWindow
                 Line(L.T("set.nbEx"), string.Join(" | ", p.NewbuildExcludeDescriptions));
                 Line(L.T("set.prRegex"), p.PerRequestIdRegex);
                 Line(L.T("set.overrides"), string.Join(" | ", p.CustomerOverrides));
+                if (p.Advanced) Line(L.T("adv.script"), p.Script);
                 ir++;
             }
             ws6.Column(1).Style.Font.Bold = true;

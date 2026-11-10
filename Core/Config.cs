@@ -62,6 +62,15 @@ public class RuleProfile
     /// </summary>
     public List<string> CustomerOverrides { get; set; } = new();
 
+    /// <summary>
+    /// When true, rows of this profile are classified by <see cref="Script"/> (advanced mode) instead of the
+    /// simple settings above. The simple settings are kept so that the user can switch back.
+    /// </summary>
+    public bool Advanced { get; set; }
+
+    /// <summary>Rule script used in advanced mode (see <see cref="RuleScript"/> for the syntax).</summary>
+    public string Script { get; set; } = "";
+
     /// <summary>Returns a deep copy of the profile.</summary>
     public RuleProfile Clone() =>
         JsonSerializer.Deserialize<RuleProfile>(JsonSerializer.Serialize(this))!;
@@ -114,6 +123,8 @@ public class RuleProfile
         if (!string.IsNullOrWhiteSpace(To) && ToKey == null) errs.Add($"{Name}: {L.T("prof.to")}: '{To}' – {L.T("err.period")}");
         if (FromKey != null && ToKey != null && string.CompareOrdinal(FromKey, ToKey) > 0) errs.Add($"{Name}: {L.T("err.range")}");
         if (AbacusPrefixLength < 0 || AbacusPrefixLength > 10) errs.Add($"{Name}: {L.T("set.abacusLen")}: 0–10");
+        if (Advanced)
+            errs.AddRange(RuleScript.Compile(Script).Errors.Select(e => $"{Name}: {L.T("adv.script")}: {e}"));
         return errs;
     }
 }

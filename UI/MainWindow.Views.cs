@@ -284,6 +284,7 @@ public partial class MainWindow
             3 => r.SapId,
             4 => r.Year.ToString(),
             5 => r.Profile,
+            6 => CatText(r.Category),
             _ => r.Person
         };
         string ColKey(Row r) => colMode switch
@@ -344,7 +345,7 @@ public partial class MainWindow
         tot[width - 1] = tAll > 0 ? tInv / tAll * 100 : 0;
         result.Insert(0, new ReportRow { Label = find == "" ? L.T("tb.total") : L.T("tb.totalShown"), Cells = tot, Pct = tot[width - 1], IsTotal = true });
 
-        string labelHdr = grp switch { 1 => L.T("g.cc"), 2 => L.T("g.customer"), 3 => L.T("g.project"), 4 => L.T("g.year"), 5 => L.T("g.profile"), _ => L.T("g.person") };
+        string labelHdr = grp switch { 1 => L.T("g.cc"), 2 => L.T("g.customer"), 3 => L.T("g.project"), 4 => L.T("g.year"), 5 => L.T("g.profile"), 6 => L.T("g.category"), _ => L.T("g.person") };
         string subHdr = grp == 0 ? "CC" : grp == 3 ? L.T("col.desc") : "";
 
         GridTable.Columns.Clear();
@@ -436,16 +437,34 @@ public partial class MainWindow
 
         // --- rows and inclusion ---
         Add(IssueLevel.Info, "data", L.T("is.rows"), L.T("is.rows.d", _raw.Count, _rows.Count, _lastRows.Count));
-        var outCc = _raw.Where(r => !_cls.InCostCenters(r)).GroupBy(r => r.Cc).OrderByDescending(g => g.Count()).ToList();
+        var outCc = _excluded.Where(x => x.reason == "cc").Select(x => x.raw).GroupBy(r => r.Cc).OrderByDescending(g => g.Count()).ToList();
         if (outCc.Count > 0)
             Add(IssueLevel.Info, "rules", L.T("is.outCc", outCc.Sum(g => g.Count())),
                 Top(outCc, 10, g => $"{(g.Key == "" ? L.T("f.noCc") : g.Key)} ({g.Count():#,0})"));
 
-        var excluded = _raw.Where(r => _cls.InCostCenters(r) && _cls.InRestricted(r) && !_cls.IsIncluded(r))
-                           .GroupBy(r => r.Person).ToList();
+        var excluded = _excluded.Where(x => x.reason == "people").Select(x => x.raw).GroupBy(r => r.Person).ToList();
         if (excluded.Count > 0)
             Add(IssueLevel.Info, "rules", L.T("is.excluded", excluded.Count),
                 L.T("is.excluded.d", excluded.Sum(g => g.Sum(r => r.Hours)).ToString("#,0"), Top(excluded, 8, g => g.Key)));
+
+        // --- advanced rule scripts ---
+        foreach (var g in _excluded.Where(x => x.reason.StartsWith("rule:")).GroupBy(x => x.reason[5..]))
+            Add(IssueLevel.Info, "script", L.T("is.ruleExcluded", g.Key, g.Count()),
+                L.T("is.excluded.d", g.Sum(x => x.raw.Hours).ToString("#,0"), Top(g.Select(x => x.raw.Person).Distinct(), 8, x => x)));
+        foreach (var (prof, script) in _cls.Scripts)
+        {
+            foreach (var e in script.Errors)
+                Add(IssueLevel.Error, "script", L.T("is.scriptError", prof.Name), e.ToString());
+            foreach (var rule in script.Rules)
+            {
+                if (rule.RuntimeErrors > 0)
+                    Add(IssueLevel.Warning, "script", L.T("is.ruleRuntime", prof.Name, rule.Name, rule.RuntimeErrors), rule.FirstRuntimeError ?? "");
+                else if (rule.Hits == 0 && _raw.Any(r => _cls.ProfileOf(r.Period) == prof))
+                    Add(IssueLevel.Info, "script", L.T("is.ruleNoHit", prof.Name, rule.Name), L.T("is.ruleNoHit.d", rule.Line));
+                else if (rule.Hits > 0)
+                    Add(IssueLevel.Info, "script", L.T("is.ruleHits", prof.Name, rule.Name), L.T("is.ruleHits.d", rule.Hits));
+            }
+        }
 
         // --- profiles ---
         var periods = _raw.Select(r => r.Period).Distinct().OrderBy(x => x).ToList();
@@ -458,6 +477,7 @@ public partial class MainWindow
             var used = periods.Where(x => _cls.ProfileOf(x) == p).ToList();
             Add(IssueLevel.Info, "profiles", L.T("is.profile", p.Name, p.RangeText),
                 used.Count == 0 ? L.T("is.profile.unused") : L.T("is.profile.used", used.Count, used[0], used[^1]));
+            if (p.Advanced) { Add(IssueLevel.Info, "profiles", L.T("is.profileAdv", p.Name), L.T("is.profileAdv.d")); continue; }
             if (p.RestrictedCostCenters.Count > 0 && p.RelevantPeople.Count == 0 && used.Count > 0)
                 Add(IssueLevel.Warning, "profiles", L.T("is.emptyPeople", p.Name), L.T("is.emptyPeople.d", string.Join(", ", p.RestrictedCostCenters)));
             if (used.Count > 0)
@@ -488,7 +508,7 @@ public partial class MainWindow
         if (other.Count > 0)
             Add(IssueLevel.Info, "data", L.T("is.otherCust", other.Count), Top(other, 12, g => $"{g.Key} ({g.Sum(r => r.Hours):#,0} h)"));
 
-        var noAb = _raw.Where(r => _cls.IsIncluded(r) && r.Abacus.Trim().Length < 2 && !_cls.IsOverhead(r.Period, r.SapId, r.Desc))
+        var noAb = _rows.Where(r => !r.Overhead && r.Abacus.Trim().Length < 2)
                        .GroupBy(r => (r.SapId, r.Desc)).OrderByDescending(g => g.Sum(r => r.Hours)).ToList();
         if (noAb.Count > 0)
             Add(IssueLevel.Info, "data", L.T("is.noAbacus", noAb.Count),

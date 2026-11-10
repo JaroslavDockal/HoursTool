@@ -167,6 +167,14 @@
                 <ComboBoxItem Content="{l:T f.cat.noP}" />
                 <ComboBoxItem Content="{l:T f.cat.regular}" />
               </ComboBox>
+              <DockPanel Margin="0,4,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                  <Button x:Name="BtnCatAll" Classes="link" Content="{l:T f.all}" />
+                  <Button x:Name="BtnCatNone" Classes="link" Content="{l:T f.none}" />
+                </StackPanel>
+                <TextBlock Text="{l:T f.categories}" Classes="lbl" />
+              </DockPanel>
+              <WrapPanel x:Name="PnlCatList" />
             </StackPanel>
           </Expander>
 
@@ -249,6 +257,7 @@
                     <ComboBoxItem Content="{l:T g.project}" />
                     <ComboBoxItem Content="{l:T g.year}" />
                     <ComboBoxItem Content="{l:T g.profile}" />
+                    <ComboBoxItem Content="{l:T g.category}" />
                   </ComboBox>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,0">
@@ -381,6 +390,7 @@
                   <ComboBoxItem Content="{l:T g.customer}" />
                   <ComboBoxItem Content="{l:T g.cc}" />
                   <ComboBoxItem Content="{l:T g.project}" />
+                  <ComboBoxItem Content="{l:T g.category}" />
                 </ComboBox>
               </StackPanel>
             </Border>
@@ -495,8 +505,39 @@
                         </StackPanel>
                       </Grid>
                       <TextBlock x:Name="TxtProfCoverage" Classes="hint" />
+                      <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                        <TextBlock Text="{l:T adv.mode}" Classes="lbl" />
+                        <RadioButton x:Name="RbSimple" GroupName="mode" Content="{l:T adv.mode.simple}" IsChecked="True" />
+                        <RadioButton x:Name="RbAdvanced" GroupName="mode" Content="{l:T adv.mode.advanced}" />
+                      </StackPanel>
+                      <TextBlock Classes="hint" Text="{l:T adv.mode.hint}" />
                     </StackPanel>
                   </Border>
+
+                  <!-- advanced mode: rule script -->
+                  <Border x:Name="PnlAdvanced" Classes="card" Padding="16" IsVisible="False">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="h" Text="{l:T adv.script}" Margin="0" />
+                      <TextBlock Classes="hint" Text="{l:T adv.script.hint}" />
+                      <WrapPanel Margin="0,4,0,0">
+                        <Button x:Name="BtnScriptGenerate" Content="{l:T adv.generate}" ToolTip.Tip="{l:T adv.generate.tip}" Margin="0,0,6,6" />
+                        <Button x:Name="BtnScriptExamples" Content="{l:T adv.examples}" Margin="0,0,6,6" />
+                        <Button x:Name="BtnScriptCheck" Content="{l:T adv.check}" ToolTip.Tip="{l:T adv.check.tip}" Margin="0,0,6,6" />
+                      </WrapPanel>
+                      <TextBox x:Name="TxtScript" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap" Height="560"
+                               FontFamily="Cascadia Mono,Consolas,Menlo,monospace" FontSize="12.5" FontWeight="Normal"
+                               ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                      <TextBlock x:Name="TxtScriptInfo" Classes="hint" />
+                      <SelectableTextBlock x:Name="TxtScriptErrors" Foreground="{DynamicResource ErrFg}" FontSize="12" TextWrapping="Wrap" />
+                      <Expander Margin="0,4,0,0">
+                        <Expander.Header><TextBlock Text="{l:T adv.reference}" FontWeight="SemiBold" /></Expander.Header>
+                        <StackPanel x:Name="PnlScriptRef" Spacing="2" />
+                      </Expander>
+                    </StackPanel>
+                  </Border>
+
+                  <!-- simple mode -->
+                  <StackPanel x:Name="PnlSimple" Spacing="12">
 
                   <Border Classes="card" Padding="16">
                     <StackPanel Spacing="6">
@@ -551,6 +592,7 @@
                       <TextBox x:Name="TxtSetOverrides" AcceptsReturn="True" Height="80" Watermark="^FKMMPXX12 => FI" />
                     </StackPanel>
                   </Border>
+                  </StackPanel>
                 </StackPanel>
 
                 <!-- right column -->

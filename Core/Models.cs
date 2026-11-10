@@ -35,9 +35,12 @@ public record Raw(string Period, int Year, int Month, string Person, string Cc, 
 /// <param name="Newbuild">True when the line belongs to a newbuild project of the split customer.</param>
 /// <param name="PerRequest">True when the line belongs to a per-request ("P") project.</param>
 /// <param name="Profile">Name of the rule profile that classified the line.</param>
+/// <param name="Abacus">ABACUS code from the export.</param>
+/// <param name="Category">Project category: <c>NB</c> (newbuild), <c>P</c> (per-request), empty, or any
+/// category defined by advanced rules.</param>
 public record Row(string Period, int Year, int Month, string Person, string Cc, string SapId,
                   string Desc, string Customer, bool Overhead, bool Newbuild, bool PerRequest,
-                  double Hours, double Value, string Profile = "");
+                  double Hours, double Value, string Profile = "", string Abacus = "", string Category = "");
 
 /// <summary>One line of the main pivot table (Table tab). <see cref="Cells"/> are numeric, formatted by the grid.</summary>
 public class ReportRow

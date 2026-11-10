@@ -293,7 +293,9 @@ public class ConfigTests
             if (!Strings.Table.ContainsKey("col." + k)) missing.Add("col." + k);
         foreach (var k in new[] { "override", "abacus", "desc", "id", "none" })
             if (!Strings.Table.ContainsKey("src." + k)) missing.Add("src." + k);
-        foreach (var k in new[] { "data", "files", "rules", "profiles", "overhead", "nb", "p" })
+        foreach (var (_, k) in RuleScript.Variables) if (!Strings.Table.ContainsKey(k)) missing.Add(k);
+        foreach (var (_, _, k) in RuleScript.Functions) if (!Strings.Table.ContainsKey(k)) missing.Add(k);
+        foreach (var k in new[] { "data", "files", "rules", "profiles", "overhead", "nb", "p", "script" })
             if (!Strings.Table.ContainsKey("cat." + k)) missing.Add("cat." + k);
         foreach (var k in new[] { "inv", "oh", "pct", "total", "nb", "p", "rest" })
             if (!Strings.Table.ContainsKey("he." + k)) missing.Add("he." + k);

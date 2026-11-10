@@ -232,6 +232,7 @@ public partial class MainWindow
             1 => r => r.Customer == "-" ? L.T("f.cust.oh") : r.Customer,
             2 => r => r.Cc,
             3 => r => r.SapId,
+            4 => r => CatText(r.Category),
             _ => r => r.Person
         };
         var keys = rows.GroupBy(keyOf).OrderByDescending(g => g.Sum(r => r.Hours)).Take(80).Select(g => g.Key).ToList();
